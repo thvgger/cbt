@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int           @id @default(autoincrement())
+  email      String        @unique
+  password   String
+  name       String
+  role       String
+  created_at DateTime      @default(now())
+  tests      Test[]        @relation("CreatedTests")
+  attempts   TestAttempt[]
+}
+
+model Test {
+  id                 Int           @id @default(autoincrement())
+  title              String
+  description        String?
+  duration_minutes   Int
+  passing_score      Int
+  calculator_allowed Boolean       @default(false)
+  created_by         Int
+  is_active          Boolean       @default(true)
+  created_at         DateTime      @default(now())
+  questions          Question[]
+  creator            User          @relation("CreatedTests", fields: [created_by], references: [id])
+  attempts           TestAttempt[]
+}
+
+model Question {
+  id             Int      @id @default(autoincrement())
+  test_id        Int
+  question_text  String
+  option_a       String
+  option_b       String
+  option_c       String
+  option_d       String
+  correct_answer String
+  points         Int      @default(1)
+  order_index    Int
+  created_at     DateTime @default(now())
+  test           Test     @relation(fields: [test_id], references: [id])
+  answers        Answer[]
+}
+
+model TestAttempt {
+  id                 Int      @id @default(autoincrement())
+  user_id            Int
+  test_id            Int
+  score              Int
+  total_questions    Int
+  time_taken_seconds Int
+  passed             Boolean
+  started_at         DateTime
+  completed_at       DateTime @default(now())
+  user               User     @relation(fields: [user_id], references: [id])
+  test               Test     @relation(fields: [test_id], references: [id])
+  answers            Answer[]
+}
+
+model Answer {
+  id              Int         @id @default(autoincrement())
+  attempt_id      Int
+  question_id     Int
+  selected_answer String?
+  is_correct      Boolean
+  created_at      DateTime    @default(now())
+  attempt         TestAttempt @relation(fields: [attempt_id], references: [id])
+  question        Question    @relation(fields: [question_id], references: [id])
+}
